@@ -14,7 +14,9 @@ export class TodoClient implements TodoClientInterface {
     } as Todo
   }
 
-  getAll () {
+  async getAll () {
+    // suspenseのfallback試し用
+    await new Promise((resolve) => setTimeout(resolve, 3000))
     return Promise.resolve(
       Object.keys(localStorage)
         .filter(key => !isNaN(Number(key)))
