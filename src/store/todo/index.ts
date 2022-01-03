@@ -1,53 +1,21 @@
 import { InjectionKey, reactive, readonly } from 'vue'
 import { Todo, TodoState, TodoStore, Params } from '@/store/todo/types'
+import RepositoryFactory, { TODOS } from '@/clients/RepositoryFactory'
+const TodoRepository = RepositoryFactory[TODOS]
 
-// ①
-const mockTodo: Todo[] = [
-  {
-    id: 1,
-    title: 'todo1',
-    description: '1つ目',
-    status: 'waiting',
-    createdAt: '2022/01/01',
-    updatedAt: '2022/01/01'
-  },
-  {
-    id: 2,
-    title: 'todo2',
-    description: '2つ目',
-    status: 'waiting',
-    createdAt: '2022/01/01',
-    updatedAt: '2022/01/01'
-  },
-  {
-    id: 3,
-    title: 'todo3',
-    description: '3つ目',
-    status: 'working',
-    createdAt: '2022/01/01',
-    updatedAt: '2022/01/01'
-  }
-]
-
-// ②
 const state = reactive<TodoState>({
-  todos: mockTodo
+  todos: []
 })
 
-// ③
-const intitializeTodo = (todo: Params) => {
-  const date = new Date()
-  return {
-    id: date.getTime(),
-    title: todo.title,
-    description: todo.description,
-    status: todo.status,
-    createdAt: '2022/01/01',
-    updatedAt: '2022/01/01'
-  } as Todo
+const fetchTodos = async (): Promise<void> => {
+  state.todos = await TodoRepository.getAll()
 }
 
-// ④
+const fetchTodo = async (id: number): Promise<void> => {
+  const todo = await TodoRepository.get(id)
+  state.todos.push(todo)
+}
+
 const getTodo = (id: number): Todo => {
   const todo = state.todos.find((todo) => todo.id === id)
   if (!todo) {
@@ -56,27 +24,29 @@ const getTodo = (id: number): Todo => {
   return todo
 }
 
-// ⑤
-const addTodo = (todo: Params): void => {
-  state.todos.push(intitializeTodo(todo))
+const addTodo = async (todo: Params): Promise<void> => {
+  const result = await TodoRepository.create(todo)
+  state.todos.push(result)
 }
 
-// ⑥
-const updateTodo = (id: number, todo: Todo): void => {
+const updateTodo = async (id: number, todo: Todo): Promise<void> => {
+  const result = await TodoRepository.update(id, todo)
   const index = state.todos.findIndex((todo) => todo.id === id)
   if (index === -1) {
     throw new Error(`cannot find todo by id:${id}`)
   }
-  state.todos[index] = todo
+  state.todos[index] = result
 }
 
-// ⑦
-const deleteTodo = (id: number): void => {
+const deleteTodo = async (id: number): Promise<void> => {
+  await TodoRepository.delete(id)
   state.todos = state.todos.filter((todo) => todo.id !== id)
 }
 
 const todoStore: TodoStore = {
   state: readonly(state),
+  fetchTodos,
+  fetchTodo,
   getTodo,
   addTodo,
   updateTodo,
